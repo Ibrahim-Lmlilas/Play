@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Match Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        body {
+            background: #0c0c1d;
+            background-image: 
+                linear-gradient(to right, rgba(67, 24, 255, 0.2), rgba(124, 21, 255, 0.2)),
+                url('https://cdn.dribbble.com/userupload/6508149/file/original-c4197a5bf25a4356aa2bac6f82073eb2.jpg?resize=752x');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            gap: 20px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(12, 12, 29, 0.9), rgba(27, 27, 50, 0.8));
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .back-button {
+            position: relative;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background: rgba(138, 43, 226, 0.2);
+            border: 1px solid rgba(138, 43, 226, 0.5);
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            z-index: 1;
+            display: block;
+            width: fit-content;
+        }
+
+        .back-button:hover {
+            background: rgba(138, 43, 226, 0.4);
+            transform: scale(1.05);
+        }
+
+        .game-container {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(138, 43, 226, 0.2);
+            text-align: center;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px;
+        }
+
+        .card {
+            width: 100px;
+            height: 100px;
+            background: rgba(138, 43, 226, 0.2);
+            border: 2px solid rgba(138, 43, 226, 0.5);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            color: white;
+            transition: transform 0.3s ease;
+            transform-style: preserve-3d;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+            background: rgba(138, 43, 226, 0.4);
+        }
+
+        .score {
+            color: white;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .start-button {
+            padding: 10px 20px;
+            background: rgba(138, 43, 226, 0.3);
+            border: none;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1.2em;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .start-button:hover {
+            background: rgba(138, 43, 226, 0.5);
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-button">Back to Games</a>
+    <div class="game-container">
+        <div class="score">Moves: <span id="moves">0</span></div>
+        <div class="game-grid" id="gameGrid"></div>
+        <button class="start-button" onclick="startGame()">New Game</button>
+    </div>
+
+    <script>
+        let moves = 0;
+        let firstCard = null;
+        let secondCard = null;
+        let canFlip = true;
+        const emojis = ['🎮', '🎲', '🎯', '🎪', '🎨', '🎭', '🎪', '🎯', '🎲', '🎮', '🎨', '🎭'];
+        let cards = [];
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function createCard(emoji, index) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.index = index;
+            card.dataset.emoji = emoji;
+            card.addEventListener('click', flipCard);
+            return card;
+        }
+
+        function flipCard() {
+            if (!canFlip || this.classList.contains('flipped') || this === firstCard) return;
+
+            this.classList.add('flipped');
+            this.textContent = this.dataset.emoji;
+
+            if (!firstCard) {
+                firstCard = this;
+            } else {
+                secondCard = this;
+                moves++;
+                document.getElementById('moves').textContent = moves;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            canFlip = false;
+            if (firstCard.dataset.emoji === secondCard.dataset.emoji) {
+                firstCard.removeEventListener('click', flipCard);
+                secondCard.removeEventListener('click', flipCard);
+                resetCards();
+                checkWin();
+            } else {
+                setTimeout(() => {
+                    firstCard.classList.remove('flipped');
+                    secondCard.classList.remove('flipped');
+                    firstCard.textContent = '';
+                    secondCard.textContent = '';
+                    resetCards();
+                }, 1000);
+            }
+        }
+
+        function resetCards() {
+            firstCard = null;
+            secondCard = null;
+            canFlip = true;
+        }
+
+        function checkWin() {
+            const allCards = document.querySelectorAll('.card');
+            const allFlipped = Array.from(allCards).every(card => card.classList.contains('flipped'));
+            if (allFlipped) {
+                setTimeout(() => {
+                    alert(`Congratulations! You won in ${moves} moves!`);
+                }, 500);
+            }
+        }
+
+        function startGame() {
+            const gameGrid = document.getElementById('gameGrid');
+            gameGrid.innerHTML = '';
+            moves = 0;
+            document.getElementById('moves').textContent = moves;
+            cards = shuffle([...emojis]);
+            
+            cards.forEach((emoji, index) => {
+                const card = createCard(emoji, index);
+                gameGrid.appendChild(card);
+            });
+        }
+
+        // Start the game when the page loads
+        startGame();
+    </script>
+</body>
+</html>
